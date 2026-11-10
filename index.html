@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TrustLens AI</title>
+<link rel="icon" type="image/png" href="/logo-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  (function() {
+    try {
+      var raw = localStorage.getItem('trustlens_a11y_settings') || localStorage.getItem('trustlens_a11y');
+      var pref = 'system';
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        var p = parsed.themePreference || parsed.theme;
+        if (p && ['light', 'dark', 'system'].indexOf(p) !== -1) {
+          pref = p;
+        }
+      }
+      var resolved = pref;
+      document.documentElement.setAttribute('data-theme', resolved);
+      document.documentElement.setAttribute('data-theme-preference', pref);
+      document.documentElement.setAttribute('data-resolved-theme', resolved);
+      document.documentElement.classList.add(resolved, 'theme-' + resolved);
+      document.documentElement.style.colorScheme = (resolved === 'light') ? 'light' : 'dark';
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

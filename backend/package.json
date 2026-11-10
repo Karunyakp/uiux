@@ -1,0 +1,20 @@
+{
+  "name": "trustlens-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "REST API for the TrustLens AI dashboard (Express + SQLite)",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "seed": "node --disable-warning=ExperimentalWarning src/seed.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "@google/genai": "^3.0.0",
+    "express": "^4.21.2"
+  }
+}
