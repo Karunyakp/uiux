@@ -384,7 +384,8 @@ export default function App() {
     navigate('app')
   }
 
-  const toast = t => {
+  const toast = t => { return; // popups disabled
+
     setToastText(t)
     setToastOn(true)
     clearTimeout(timer.current)
