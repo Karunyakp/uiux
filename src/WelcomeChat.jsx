@@ -8,9 +8,9 @@ export default function WelcomeChat() {
         <div className="welcome-icon-shield">
           <Ic n="shield" />
         </div>
-        <h2 className="welcome-heading">What would you like to know?</h2>
+        <h2 className="welcome-heading">Welcome to TrustLens AI</h2>
         <p className="welcome-subheading">
-          Ask anything. I'll help you understand the answer, check its evidence and assess its reliability.
+          Ask any question below to calibrate evidence, extract verified claims, and view authoritative sources.
         </p>
       </div>
     </div>

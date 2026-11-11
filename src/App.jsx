@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { C as FALLBACK_C, K as FALLBACK_K } from './data.js'
 import { api, ensureSession } from './api.js'
+import { getAnswer } from './services/answerEngine'
+import { searchKnowledgeBase } from './data/knowledgeBase'
 import Sprite from './Sprite.jsx'
 import Ic from './Ic.jsx'
 import Evidence from './Evidence.jsx'
@@ -107,6 +109,7 @@ export default function App() {
   const [feedbackRating, setFeedbackRating] = useState(5)
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [selectedClaimIndex, setSelectedClaimIndex] = useState(0)
+  const [selectedClaimId, setSelectedClaimId] = useState('C1')
   const [isAnalysing, setIsAnalysing] = useState(false)
   const [conversationId, setConversationId] = useState(() =>
     typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'conv_' + Date.now()
@@ -565,20 +568,25 @@ export default function App() {
         }))
 
       const targetConvId = conversationId
-      const res = await api.chat(qText, targetConvId, hist, currentAttachments)
+
+      // Execute 3-Layer Answer Pipeline (Gemini -> Open Source -> Offline KB)
+      const trustAns = await getAnswer(qText, hist)
 
       if (conversationIdRef.current !== targetConvId) {
-        // User switched conversations while this was being analyzed.
-        // It is safely stored in the database under targetConvId, but do not overwrite the current active conversation view.
         return
       }
 
-      // Progressive streaming response display
-      const fullAnswer = res.answer || ''
-      const fullHtml = res.answerHtml || fullAnswer
+      // Show toast if offline library was used
+      if (trustAns.provider === 'offline' && !window._offlineToastShown) {
+        toast('Using offline verification library.')
+        window._offlineToastShown = true
+      }
+
+      // Progressive typing effect for directAnswer
+      const fullAnswer = trustAns.directAnswer || ''
       const words = fullAnswer.split(' ')
 
-      if (words.length <= 10) {
+      if (words.length <= 8) {
         setMessages(prev =>
           prev.map(item => {
             if (item.id !== asstMsgId) return item
@@ -588,26 +596,19 @@ export default function App() {
               error: false,
               content: fullAnswer,
               plainAnswer: fullAnswer,
-              answerHtml: fullHtml,
-              lvl: res.confidence?.level || 'High',
-              pct: res.confidence?.score ?? 86,
-              hasScore: res.confidence?.score !== null,
-              ex: res.confidence?.explanation || '',
-              why: res.why || [],
-              by: res.before_you_act || res.beforeYouAct || '',
-              claims: res.claims || [],
-              sources: res.sources || [],
-              attachments: currentAttachments.length > 0 ? currentAttachments : item.attachments,
-              uncertainties: res.uncertainties || [],
-              conflicts: res.conflicts || [],
-              verificationStatus: res.verification_status || 'Verified',
-              breakdown: res.confidence?.breakdown || res.ui?.breakdown || null,
-              ui: res.ui
+              trustAnswer: trustAns,
+              provider: trustAns.provider,
+              claims: trustAns.claims,
+              sources: trustAns.sources,
+              uncertainties: trustAns.uncertainties,
+              nextSteps: trustAns.nextSteps,
+              stakes: trustAns.stakes,
+              followUps: trustAns.followUps
             }
           })
         )
       } else {
-        let currentWordIdx = 6
+        let currentWordIdx = 4
         setMessages(prev =>
           prev.map(item => {
             if (item.id !== asstMsgId) return item
@@ -618,21 +619,14 @@ export default function App() {
               error: false,
               content: partialText,
               plainAnswer: partialText,
-              answerHtml: partialText,
-              lvl: res.confidence?.level || 'High',
-              pct: res.confidence?.score ?? 86,
-              hasScore: res.confidence?.score !== null,
-              ex: res.confidence?.explanation || '',
-              why: res.why || [],
-              by: res.before_you_act || res.beforeYouAct || '',
-              claims: res.claims || [],
-              sources: res.sources || [],
-              attachments: currentAttachments.length > 0 ? currentAttachments : item.attachments,
-              uncertainties: res.uncertainties || [],
-              conflicts: res.conflicts || [],
-              verificationStatus: res.verification_status || 'Verified',
-              breakdown: res.confidence?.breakdown || res.ui?.breakdown || null,
-              ui: res.ui
+              trustAnswer: trustAns,
+              provider: trustAns.provider,
+              claims: trustAns.claims,
+              sources: trustAns.sources,
+              uncertainties: trustAns.uncertainties,
+              nextSteps: trustAns.nextSteps,
+              stakes: trustAns.stakes,
+              followUps: trustAns.followUps
             }
           })
         )
@@ -646,7 +640,7 @@ export default function App() {
             streamIntervalRef.current = null
             return
           }
-          currentWordIdx += 6
+          currentWordIdx += 4
           if (currentWordIdx >= words.length) {
             clearInterval(streamIntervalRef.current)
             streamIntervalRef.current = null
@@ -656,8 +650,7 @@ export default function App() {
                 return {
                   ...item,
                   content: fullAnswer,
-                  plainAnswer: fullAnswer,
-                  answerHtml: fullHtml
+                  plainAnswer: fullAnswer
                 }
               })
             )
@@ -669,60 +662,58 @@ export default function App() {
                 return {
                   ...item,
                   content: partialText,
-                  plainAnswer: partialText,
-                  answerHtml: partialText
+                  plainAnswer: partialText
                 }
               })
             )
           }
-        }, 30)
+        }, 25)
       }
 
       setActiveMessageId(asstMsgId)
-      setSelectedClaimIndex(0)
-
-      // Refresh conversations list in background
-      api.conversations().then(data => {
-        if (data?.conversations) setConversationsList(data.conversations)
-      }).catch(() => {})
-
-      toast('Answer calibrated with real evidence.')
-    } catch (err) {
-      let rawMsg = err.message || 'Could not connect to TrustLens AI service.'
-      let cleanMsg = rawMsg
-
-      try {
-        const jsonMatch = rawMsg.match(/\{[\s\S]*"error"[\s\S]*\}/)
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0])
-          if (parsed.error?.message) {
-            cleanMsg = parsed.error.message
-          }
-        }
-      } catch {}
-
-      const lower = cleanMsg.toLowerCase()
-      if (lower.includes('high demand') || lower.includes('unavailable') || lower.includes('503')) {
-        cleanMsg = 'AI model is currently experiencing high demand. Please click Retry in a few moments.'
-      } else if (lower.includes('rate limit') || lower.includes('429')) {
-        cleanMsg = 'Rate limit reached. Please wait a few moments and retry.'
-      } else {
-        cleanMsg = cleanMsg.replace(/^Gemini API service error:\s*/i, '').trim()
+      if (trustAns.claims?.length > 0) {
+        setSelectedClaimId(trustAns.claims[0].id)
       }
 
+      // Persist conversation to localStorage
+      try {
+        const storedConvs = JSON.parse(localStorage.getItem('trustlens_local_chats') || '[]')
+        const existingIdx = storedConvs.findIndex(c => c.id === targetConvId)
+        const updatedChat = {
+          id: targetConvId,
+          title: qText.slice(0, 45) + (qText.length > 45 ? '…' : ''),
+          updatedAt: new Date().toISOString()
+        }
+        if (existingIdx >= 0) {
+          storedConvs[existingIdx] = updatedChat
+        } else {
+          storedConvs.unshift(updatedChat)
+        }
+        localStorage.setItem('trustlens_local_chats', JSON.stringify(storedConvs))
+        setConversationsList(storedConvs)
+      } catch {}
+
+      toast('Answer calibrated with verified claims.')
+    } catch (err) {
+      console.error('[handleAskQuestion] Error:', err)
+      // Ultimate safety fallback: search knowledge base directly
+      const safeFallback = searchKnowledgeBase(qText)
       setMessages(prev =>
         prev.map(item => {
           if (item.id !== asstMsgId) return item
           return {
             ...item,
             pending: false,
-            error: true,
-            errorMsg: cleanMsg,
-            promptText: qText
+            error: false,
+            content: safeFallback.directAnswer,
+            plainAnswer: safeFallback.directAnswer,
+            trustAnswer: safeFallback,
+            claims: safeFallback.claims,
+            sources: safeFallback.sources
           }
         })
       )
-      toast(cleanMsg)
+      toast('Retrieved answer from offline knowledge base.')
     } finally {
       setIsAnalysing(false)
       setTimeout(() => {
@@ -1175,6 +1166,42 @@ export default function App() {
     messages.find(m => m.id === activeMessageId && m.role === 'assistant') ||
     [...messages].reverse().find(m => m.role === 'assistant' && !m.pending && !m.error)
 
+  // When no chat message has been sent yet, preview the currently selected sample topic in Evidence panel
+  const sampleTopicData = (c && messages.length === 0) ? {
+    lvl: c.lvl || 'High',
+    pct: c.pct ?? 86,
+    hasScore: true,
+    ex: c.ex || 'Based on authoritative reference records.',
+    why: c.why || [],
+    by: c.by || '',
+    claim: c.claim || 'Key factual statement.',
+    claims: [
+      {
+        id: 'c1',
+        text: c.claim || 'Key factual statement.',
+        status: 'supported',
+        importance: 'critical',
+        source_indices: [1],
+        evidence: c.para || 'Corroborated by official documentation.',
+        source_title: c.src || 'Authoritative Source'
+      }
+    ],
+    src: c.src || 'Official Reference',
+    sources: [
+      {
+        index: 1,
+        title: c.src || 'Official Reference',
+        publisher: c.sec || 'Issuing Authority',
+        type: c.type || 'Official brochure',
+        url: '#',
+        summary: c.para || 'Official guidelines excerpt.'
+      }
+    ],
+    plainAnswer: c.claim,
+    answerHtml: c.a,
+    verificationStatus: 'Sample Evidence'
+  } : null
+
   const activeEvidenceData = activeAssistantMessage ? {
     ...(activeAssistantMessage.ui || {}),
     claims: activeAssistantMessage.claims || activeAssistantMessage.ui?.claims || [],
@@ -1301,7 +1328,17 @@ export default function App() {
             {view === 'home' && (
               <>
                 {messages.length === 0 ? (
-                  <WelcomeChat />
+                  <WelcomeChat
+                    onAskQuestion={q => handleAskQuestion(q)}
+                    onSelectTopic={tId => {
+                      setCur(tId)
+                      const matched = searchKnowledgeBase(tId)
+                      if (matched?.claims?.length) {
+                        setSelectedClaimId(matched.claims[0].id)
+                      }
+                    }}
+                    selectedTopic={cur}
+                  />
                 ) : (
                   <div className="chat-messages-container">
                     {messages.map(msg => {
@@ -1313,8 +1350,9 @@ export default function App() {
                           key={msg.id}
                           message={msg}
                           isSelected={activeMessageId === msg.id}
+                          selectedClaimId={selectedClaimId}
                           onSelect={handleSelectMessage}
-                          onClaimClick={handleClaimClick}
+                          onClaimSelect={(claimId) => setSelectedClaimId(claimId)}
                           onCopy={copyAnswer}
                           onSave={toggleSave}
                           isSaved={saved.includes(msg.id)}
@@ -1328,6 +1366,7 @@ export default function App() {
                           onVerify={() => handleSelectMessage(msg.id)}
                           onReport={handleReportIssue}
                           onRetry={handleRetry}
+                          onFollowUpClick={(fq) => handleAskQuestion(fq)}
                           onNotify={toast}
                         />
                       )
@@ -1669,8 +1708,9 @@ export default function App() {
         <Evidence
           view={view}
           activeData={activeEvidenceData}
-          selectedClaimIndex={selectedClaimIndex}
-          setSelectedClaimIndex={setSelectedClaimIndex}
+          trustAnswer={activeAssistantMessage?.trustAnswer || sampleTopicData?.trustAnswer || null}
+          selectedClaimId={selectedClaimId}
+          onSelectClaim={(id) => setSelectedClaimId(id)}
           checks={checks}
           savedCount={savedItems.length || saved.length}
           conversationsCount={conversationsList.length}

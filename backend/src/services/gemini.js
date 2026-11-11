@@ -85,7 +85,13 @@ export async function callGemini({
     throw error
   }
 
-  const model = config.geminiModel || 'gemini-2.5-flash'
+  const candidateModels = [
+    config.geminiModel,
+    'gemini-3.8-flash',
+    'gemini-3.5-flash'
+  ].filter(Boolean)
+  // Deduplicate candidate models
+  const uniqueModels = [...new Set(candidateModels)]
 
   // Build multi-turn contents from history
   const contents = []
@@ -148,63 +154,53 @@ export async function callGemini({
   try {
     let response = null
     let groundingMetadata = null
+    let successfulModel = uniqueModels[0] || 'gemini-3.5-flash'
 
-    // Attempt with Google Search grounding first where requested
-    if (enableSearch) {
+    // Try candidate models in order of preference
+    let lastError = null
+    for (const currentModel of uniqueModels) {
       try {
-        response = await withTimeout(client.models.generateContent({
-          model,
-          contents,
-          config: {
-            ...reqConfig,
-            tools: [{ googleSearch: {} }]
+        // Attempt search-grounded generation first if enabled
+        if (enableSearch) {
+          try {
+            response = await withTimeout(client.models.generateContent({
+              model: currentModel,
+              contents,
+              config: {
+                ...reqConfig,
+                tools: [{ googleSearch: {} }]
+              }
+            }), 25000, `Search-grounded verification (${currentModel})`)
+            groundingMetadata = response.candidates?.[0]?.groundingMetadata || null
+            successfulModel = currentModel
+            break
+          } catch (groundingErr) {
+            console.warn(`[gemini] Google Search tool on ${currentModel} encountered limit/error: ${groundingErr.message?.slice(0, 80)}. Falling back to direct model generation.`)
           }
-        }), 25000, 'Search-grounded verification')
+        }
+
+        // Direct model generation (without tools)
+        response = await withTimeout(client.models.generateContent({
+          model: currentModel,
+          contents,
+          config: reqConfig
+        }), 25000, `Model verification generation (${currentModel})`)
         groundingMetadata = response.candidates?.[0]?.groundingMetadata || null
-      } catch (groundingErr) {
-        const gmsg = String(groundingErr.message || groundingErr)
-        // If grounding tool is rate-limited, high-demand, times out, or quota exceeded, seamlessly fall back to model generation
-        if (
-          gmsg.includes('RESOURCE_EXHAUSTED') ||
-          gmsg.includes('429') ||
-          gmsg.includes('quota') ||
-          gmsg.includes('tool') ||
-          gmsg.includes('timed out') ||
-          gmsg.includes('503') ||
-          gmsg.includes('UNAVAILABLE') ||
-          gmsg.includes('high demand')
-        ) {
-          console.warn('[gemini] Google Search grounding quota exceeded, busy, or timed out; falling back to direct model generation.')
-        } else {
-          throw groundingErr
+        successfulModel = currentModel
+        break
+      } catch (modelErr) {
+        lastError = modelErr
+        const emsg = String(modelErr.message || modelErr)
+        console.warn(`[gemini] Model ${currentModel} error (${modelErr.status || 'unknown'}): ${emsg.slice(0, 100)}. Checking next available model...`)
+        // Short pause between model attempts if rate limited or high demand
+        if (emsg.includes('503') || emsg.includes('429')) {
+          await sleep(600)
         }
       }
     }
 
-    // Direct model generation if search was not enabled or if grounding fell back
     if (!response) {
-      try {
-        response = await withTimeout(client.models.generateContent({
-          model,
-          contents,
-          config: reqConfig
-        }), 30000, 'Model verification generation')
-      } catch (directErr) {
-        const dmsg = String(directErr.message || directErr)
-        // If high demand or transient 503/429 occurs, attempt 1 quick automatic retry after 1200ms
-        if (dmsg.includes('503') || dmsg.includes('high demand') || dmsg.includes('UNAVAILABLE')) {
-          console.warn('[gemini] Model reported high demand spike; retrying once after 1200ms backoff...')
-          await sleep(1200)
-          response = await withTimeout(client.models.generateContent({
-            model,
-            contents,
-            config: reqConfig
-          }), 30000, 'Model verification retry')
-        } else {
-          throw directErr
-        }
-      }
-      groundingMetadata = response.candidates?.[0]?.groundingMetadata || null
+      throw lastError || new Error('All Gemini model candidates were unavailable.')
     }
 
     const candidate = response.candidates?.[0]
@@ -214,7 +210,7 @@ export async function callGemini({
       text,
       groundingMetadata,
       usage: response.usageMetadata || null,
-      model
+      model: successfulModel
     }
   } catch (err) {
     const cleanMsg = cleanGeminiErrorMessage(err)

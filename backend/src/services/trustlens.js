@@ -42,7 +42,12 @@ You MUST respond with a valid JSON object matching this exact structure:
     "score": 85,
     "explanation": "Clear explanation of why this confidence level was assigned based on evidence availability, source authority, and freshness."
   },
-  "why": [
+  "key_points": [
+      "Concise, important factual takeaway sentence 1",
+      "Concise, important factual takeaway sentence 2",
+      "Concise, important factual takeaway sentence 3"
+    ],
+    "why": [
     "Reason 1 regarding source authority or consensus",
     "Reason 2 regarding freshness or limitations",
     "Reason 3 regarding completeness"
@@ -168,6 +173,10 @@ function generateRateLimitFallback(message, attachments = [], err = null) {
 
   const answer = `TrustLens received your question: "${message}". ${reasonNote} In the meantime, TrustLens advises reviewing authoritative documentation directly to verify criteria, deadlines, and official notices.${attNote}`
 
+  const keyPoints = [
+    `Official eligibility requirements must be corroborated directly with the primary institution.`,
+    `Check updated cutoff dates, concessions, and category qualifications.`
+  ]
   const claims = [
     {
       id: 'c1',
@@ -207,6 +216,7 @@ function generateRateLimitFallback(message, attachments = [], err = null) {
   const answerHtml = highlightClaimsInAnswer(answer, claims)
 
   const calibration = calibrateTrustAnswer({
+    keyPoints,
     claims,
     sources,
     uncertainties,
@@ -272,6 +282,7 @@ function generateRateLimitFallback(message, attachments = [], err = null) {
         isHighDemand ? 'Temporary upstream high demand spike detected; conservative scoring applied.' : 'Provisional evaluation awaiting live grounding refresh.'
       ],
       by: beforeYouAct,
+      keyPoints,
       claim: claims[0].text,
       claims,
       src: sources[0].title,
@@ -336,6 +347,7 @@ export function trustlensService() {
       const answer = parsed?.answer || geminiResult.text || 'No answer generated.'
       const rawClaims = Array.isArray(parsed?.claims) ? parsed.claims : []
       const rawSources = Array.isArray(parsed?.sources) ? parsed.sources : []
+      const keyPoints = Array.isArray(parsed?.key_points) && parsed.key_points.length > 0 ? parsed.key_points : (Array.isArray(parsed?.claims) && parsed.claims.length > 0 ? parsed.claims.slice(0, 4).map(c => c.text) : []);
       const uncertainties = Array.isArray(parsed?.uncertainties) ? parsed.uncertainties : []
       const conflicts = Array.isArray(parsed?.conflicts) ? parsed.conflicts : []
       const whyList = Array.isArray(parsed?.why) && parsed.why.length > 0
@@ -415,6 +427,7 @@ export function trustlensService() {
 
       // Execute transparent multi-factor Confidence Calibration Engine (Phase 6)
       const calibration = calibrateTrustAnswer({
+        keyPoints,
         claims: normalizedClaims,
         sources: combinedSources,
         uncertainties,
@@ -492,6 +505,7 @@ export function trustlensService() {
           ex: explanation,
           why: whyList,
           by: beforeYouAct,
+          keyPoints,
           claim: primaryClaim,
           claims: normalizedClaims,
           src: primarySource.title,

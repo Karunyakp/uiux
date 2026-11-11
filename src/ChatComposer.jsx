@@ -14,7 +14,9 @@ export default function ChatComposer({
   onNotify,
   attachments = [],
   onAddAttachments,
-  onRemoveAttachment
+  onRemoveAttachment,
+  suggestedFollowUps = [],
+  onSelectSuggestion
 }) {
   const [voiceState, setVoiceState] = useState('idle') // 'idle' | 'listening' | 'transcribing'
   const recognitionRef = useRef(null)
@@ -315,6 +317,30 @@ export default function ChatComposer({
           </button>
         </div>
       </form>
+
+      {/* Suggested Follow-up Questions Tray */}
+      {Array.isArray(suggestedFollowUps) && suggestedFollowUps.length > 0 && !isAnalysing && (
+        <div className="composer-suggested-tray">
+          <span className="composer-suggested-label">
+            <Ic n="spark" />
+            <span>Suggested:</span>
+          </span>
+          <div className="composer-suggested-chips">
+            {suggestedFollowUps.slice(0, 3).map((sug, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="composer-suggested-chip"
+                onClick={() => onSelectSuggestion && onSelectSuggestion(sug)}
+                title={sug}
+              >
+                <span>{sug}</span>
+                <span className="sug-arrow">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

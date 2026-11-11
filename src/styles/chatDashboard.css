@@ -1,0 +1,500 @@
+/* =========================================================================
+   RE-LAYOUT CHAT DASHBOARD (/app) - DIRECT ANSWER FIRST & CLEAN ROWS
+   ========================================================================= */
+
+/* Assistant Content Column */
+.assistant-content-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 1. Direct Answer Prose Container */
+.assistant-prose-container {
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--border-color, #DCE5EC);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 10px rgba(16, 43, 70, 0.04);
+}
+
+:root[data-theme="dark"] .assistant-prose-container {
+  background: #091724;
+  border-color: rgba(8, 127, 140, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="system"] .assistant-prose-container {
+  background: #0B2535;
+  border-color: #164663;
+}
+
+.assistant-clean-prose {
+  font-family: Inter, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-primary, #142B42);
+  max-width: 70ch;
+  word-break: break-word;
+}
+
+:root[data-theme="dark"] .assistant-clean-prose {
+  color: #F0F6FA;
+}
+
+:root[data-theme="system"] .assistant-clean-prose {
+  color: #F2FAFD;
+}
+
+.inline-cite-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teal, #087F8C);
+  background: var(--mint, #E4F4EF);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin: 0 2px;
+  cursor: pointer;
+  vertical-align: super;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.inline-cite-chip:hover {
+  background: var(--teal, #087F8C);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+/* 2. Structured Claims List (Fixes C1Authoritative Source spacing bug) */
+.assistant-claims-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.claim-compact-row {
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--border-color, #DCE5EC);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.claim-compact-row:hover {
+  border-color: var(--teal, #087F8C);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(8, 127, 140, 0.08);
+}
+
+.claim-compact-row.is-active-claim {
+  border-color: var(--teal, #087F8C);
+  box-shadow: 0 0 0 2px rgba(8, 127, 140, 0.2);
+}
+
+:root[data-theme="dark"] .claim-compact-row {
+  background: #0B1A28;
+  border-color: rgba(8, 127, 140, 0.3);
+}
+
+:root[data-theme="system"] .claim-compact-row {
+  background: #0C283A;
+  border-color: #164663;
+}
+
+.claim-compact-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.claim-id-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--mint, #E4F4EF);
+  color: var(--teal, #087F8C);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+:root[data-theme="dark"] .claim-id-badge {
+  background: rgba(8, 127, 140, 0.25);
+  color: #65DCC8;
+}
+
+.claim-text-content {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary, #142B42);
+  line-height: 1.45;
+  flex: 1;
+}
+
+:root[data-theme="dark"] .claim-text-content {
+  color: #FFFFFF;
+}
+
+.claim-compact-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border-color, #E2EBF0);
+}
+
+:root[data-theme="dark"] .claim-compact-meta-row {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.claim-source-text {
+  font-size: 11.5px;
+  color: var(--text-secondary, #657D95);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.claim-source-text svg {
+  width: 13px;
+  height: 13px;
+  color: var(--teal, #087F8C);
+  flex-shrink: 0;
+}
+
+.claim-confidence-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+
+.claim-confidence-pill.is-high {
+  background: #E6F8F0;
+  color: #0F8256;
+}
+
+.claim-confidence-pill.is-medium {
+  background: #FFF4E5;
+  color: #C06A00;
+}
+
+.claim-confidence-pill.is-low {
+  background: #FEECEB;
+  color: #D32F2F;
+}
+
+.claim-confidence-pill.is-verify {
+  background: #FFF8E1;
+  color: #F57F17;
+  border: 1px solid rgba(245, 127, 23, 0.3);
+}
+
+:root[data-theme="dark"] .claim-confidence-pill.is-high {
+  background: rgba(15, 130, 86, 0.25);
+  color: #5CD6A1;
+}
+
+:root[data-theme="dark"] .claim-confidence-pill.is-verify {
+  background: rgba(245, 127, 23, 0.25);
+  color: #FFD54F;
+}
+
+/* 3. Action Buttons - Single Compact Row (No wrapping) */
+.assistant-actions-compact-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.action-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #DCE5EC);
+  background: var(--card-bg, #FFFFFF);
+  color: var(--text-secondary, #657D95);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.action-icon-btn:hover {
+  background: var(--mint, #E4F4EF);
+  color: var(--teal, #087F8C);
+  border-color: var(--teal, #087F8C);
+}
+
+.action-icon-btn.is-active {
+  background: var(--teal, #087F8C);
+  color: #FFFFFF;
+  border-color: var(--teal, #087F8C);
+}
+
+.action-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.action-text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #DCE5EC);
+  background: var(--card-bg, #FFFFFF);
+  color: var(--text-primary, #142B42);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.action-text-btn.is-receipt {
+  color: var(--teal, #087F8C);
+  background: var(--mint, #E4F4EF);
+  border-color: rgba(8, 127, 140, 0.3);
+}
+
+.action-text-btn:hover {
+  border-color: var(--teal, #087F8C);
+  transform: translateY(-1px);
+}
+
+.action-text-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+:root[data-theme="dark"] .action-icon-btn,
+:root[data-theme="dark"] .action-text-btn {
+  background: #0B1724;
+  border-color: rgba(8, 127, 140, 0.3);
+  color: #DCECF4;
+}
+
+/* Overflow dropdown */
+.overflow-dropdown-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 6px;
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--border-color, #DCE5EC);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  z-index: 50;
+  min-width: 190px;
+}
+
+:root[data-theme="dark"] .overflow-dropdown-menu {
+  background: #0A1C2C;
+  border-color: rgba(8, 127, 140, 0.4);
+}
+
+.dropdown-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.dropdown-menu-item:hover {
+  background: var(--mint, #E4F4EF);
+  color: var(--teal, #087F8C);
+}
+
+:root[data-theme="dark"] .dropdown-menu-item:hover {
+  background: rgba(8, 127, 140, 0.25);
+  color: #65DCC8;
+}
+
+.dropdown-menu-item svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 4. Confidence Summary Strip */
+.assistant-confidence-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary, #657D95);
+  padding: 4px 2px;
+  margin-top: 2px;
+}
+
+.strip-claims-summary {
+  font-weight: 600;
+}
+
+.strip-dot {
+  opacity: 0.5;
+}
+
+.strip-stakes {
+  font-weight: 600;
+}
+
+.strip-provider-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.strip-provider-badge.is-live {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid rgba(46, 125, 50, 0.3);
+}
+
+.strip-provider-badge.is-open {
+  background: #E3F2FD;
+  color: #1565C0;
+  border: 1px solid rgba(21, 101, 192, 0.3);
+}
+
+.strip-provider-badge.is-offline {
+  background: #ECEFF1;
+  color: #455A64;
+  border: 1px solid rgba(69, 90, 100, 0.3);
+}
+
+:root[data-theme="dark"] .strip-provider-badge.is-live {
+  background: rgba(46, 125, 50, 0.25);
+  color: #81C784;
+}
+
+:root[data-theme="dark"] .strip-provider-badge.is-open {
+  background: rgba(21, 101, 192, 0.25);
+  color: #90CAF9;
+}
+
+:root[data-theme="dark"] .strip-provider-badge.is-offline {
+  background: rgba(69, 90, 100, 0.25);
+  color: #B0BEC5;
+}
+
+/* 5. Follow-Up Chips */
+.assistant-follow-up-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.follow-up-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--border-color, #DCE5EC);
+  color: var(--text-primary, #142B42);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.follow-up-chip:hover {
+  background: var(--mint, #E4F4EF);
+  color: var(--teal, #087F8C);
+  border-color: var(--teal, #087F8C);
+  transform: translateY(-1px);
+}
+
+:root[data-theme="dark"] .follow-up-chip {
+  background: #0B1724;
+  border-color: rgba(8, 127, 140, 0.35);
+  color: #DCECF4;
+}
+
+.chip-arrow {
+  color: var(--teal, #087F8C);
+  font-weight: 700;
+}
+
+/* 6. High Stakes Banner in Right Panel */
+.ev-high-stakes-banner {
+  background: #FFF5F2;
+  border: 1px solid #FFCCBC;
+  border-left: 4px solid #E06D53;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+:root[data-theme="dark"] .ev-high-stakes-banner {
+  background: #231210;
+  border-color: #632C24;
+}
+
+/* 7. Slide-over drawer on narrow screens (< 1100px) */
+@media (max-width: 1100px) {
+  .app-three-col {
+    position: relative;
+  }
+
+  .ev {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    max-width: 85vw;
+    background: var(--sidebar-bg, #FFFFFF);
+    z-index: 100;
+    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.2);
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ev.is-drawer-open {
+    transform: translateX(0);
+  }
+}

@@ -436,7 +436,158 @@ export function AssistantMessage({
           </div>
         )}
 
-        {/* 3. Two Side-by-Side Metric Cards */}
+        {/* 3. Key Points Card */}
+          {((Array.isArray(keyPoints) && keyPoints.length > 0) || (Array.isArray(message.ui?.keyPoints) && message.ui.keyPoints.length > 0) || (normalizedClaims.length > 0)) && (
+            <div className="assistant-key-points-card inset">
+              <div className="key-points-header">
+                <span className="key-points-icon-wrap"><Ic n="spark" /></span>
+                <b className="key-points-title">Key Points</b>
+              </div>
+              <ul className="key-points-list">
+                {(
+                  (Array.isArray(keyPoints) && keyPoints.length > 0 ? keyPoints : null) ||
+                  (Array.isArray(message.ui?.keyPoints) && message.ui.keyPoints.length > 0 ? message.ui.keyPoints : null) ||
+                  normalizedClaims.slice(0, 4).map(c => c.text)
+                ).map((pt, idx) => (
+                  <li key={idx} className="key-point-item">
+                    <span className="key-point-bullet" />
+                    <span className="key-point-text">{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 4. Confidence & Answer Information Blocks */}
+          <div className="assistant-info-blocks-grid">
+            {/* Block 1: Confidence Level and Percentage */}
+            <div className="info-block-item inset">
+              <div className="info-block-top">
+                <span className="info-block-icon is-teal"><Ic n="shield" /></span>
+                <span className="info-block-label">Confidence</span>
+              </div>
+              <div className="info-block-val-row">
+                <b className="info-block-val">{lvl}</b>
+                <span className="info-block-pct-pill">{pct}%</span>
+              </div>
+              <div className="assistant-meter-track" style={{ height: 4, marginTop: 6, borderRadius: 2 }}>
+                <div className="assistant-meter-fill" style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+              </div>
+            </div>
+
+            {/* Block 2: Answer Type */}
+            <div className="info-block-item inset">
+              <div className="info-block-top">
+                <span className="info-block-icon is-cyan"><Ic n="layers" /></span>
+                <span className="info-block-label">Answer Type</span>
+              </div>
+              <b className="info-block-val" style={{ fontSize: 13, marginTop: 4 }}>
+                {normalizedSources.length > 0 ? 'Evidence-Calibrated' : 'Synthesized Guidance'}
+              </b>
+              <small style={{ color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
+                {normalizedSources.length} official source{normalizedSources.length === 1 ? '' : 's'}
+              </small>
+            </div>
+
+            {/* Block 3: Last Updated Date */}
+            <div className="info-block-item inset">
+              <div className="info-block-top">
+                <span className="info-block-icon is-teal"><Ic n="calendar" /></span>
+                <span className="info-block-label">Last Updated</span>
+              </div>
+              <b className="info-block-val" style={{ fontSize: 13, marginTop: 4 }}>
+                {message.ui?.chk || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </b>
+              <small style={{ color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
+                Audited timestamp
+              </small>
+            </div>
+
+            {/* Block 4: Uncertainty or Limitations */}
+            <div className="info-block-item inset">
+              <div className="info-block-top">
+                <span className="info-block-icon is-warn"><Ic n="alert-triangle" /></span>
+                <span className="info-block-label">Limitations</span>
+              </div>
+              <p className="info-block-text" title={normalizedUncertainties[0] || 'Verify with authority'}>
+                {normalizedUncertainties[0] || 'Verify current notices directly with the issuing portal.'}
+              </p>
+            </div>
+          </div>
+
+          {/* 5. Answer Actions */}
+          <div className="assistant-card-actions">
+            {/* Save */}
+            <button
+              type="button"
+              className={`act-btn ${isSaved ? 'is-active' : ''}`}
+              onClick={e => {
+                e.stopPropagation()
+                if (onSave) onSave(message)
+              }}
+              title={isSaved ? 'Remove from saved' : 'Bookmark this answer'}
+            >
+              <Ic n="bookmark" />
+              <span>{isSaved ? 'Saved' : 'Save'}</span>
+            </button>
+
+            {/* Share */}
+            <button
+              type="button"
+              className="act-btn"
+              onClick={handleShareClick}
+              title="Share answer and confidence score"
+            >
+              <Ic n="share" />
+              <span>Share</span>
+            </button>
+
+            {/* Copy */}
+            <button
+              type="button"
+              className={`act-btn ${isCopied ? 'is-active' : ''}`}
+              onClick={handleCopy}
+              title="Copy answer text to clipboard"
+            >
+              <Ic n={isCopied ? 'check' : 'copy'} />
+              <span>{isCopied ? 'Copied!' : 'Copy'}</span>
+            </button>
+
+            {/* Explain this answer */}
+            <button
+              type="button"
+              className="act-btn"
+              onClick={handleExplainClick}
+              title="Explain this answer in simpler, more accessible terms"
+            >
+              <Ic n="help-circle" />
+              <span>Explain</span>
+            </button>
+
+            {/* Verify this claim */}
+            <button
+              type="button"
+              className={`act-btn is-inspect ${isSelected ? 'is-active' : ''}`}
+              onClick={handleVerifyClick}
+              title="Focus Evidence panel and verify claims"
+            >
+              <Ic n="check" />
+              <span>Verify Claim</span>
+            </button>
+
+            {/* Read aloud */}
+            <button
+              type="button"
+              className={`act-btn ${isSpeaking ? 'is-active' : ''}`}
+              onClick={handleToggleSpeak}
+              title={isSpeaking ? 'Stop speaking' : 'Read answer aloud'}
+            >
+              <Ic n={isSpeaking ? 'volume-x' : 'volume-2'} />
+              <span>{isSpeaking ? 'Pause' : 'Read aloud'}</span>
+            </button>
+          </div>
+
+          {/* 3. Two Side-by-Side Metric Cards */}
         <div className="assistant-metrics-grid">
           {/* Card 1: Confidence Level & Meter */}
           <div className="assistant-metric-card inset">
