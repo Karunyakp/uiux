@@ -243,7 +243,8 @@ export function AssistantMessage({
     claims = [],
     sources = [],
     uncertainties = [],
-    recommended_actions = []
+    recommended_actions = [],
+    keyPoints = []
   } = message
 
   // Normalized claims
@@ -492,7 +493,7 @@ export function AssistantMessage({
             {/* Block 3: Last Updated Date */}
             <div className="info-block-item inset">
               <div className="info-block-top">
-                <span className="info-block-icon is-teal"><Ic n="calendar" /></span>
+                <span className="info-block-icon is-teal"><Ic n="receipt" /></span>
                 <span className="info-block-label">Last Updated</span>
               </div>
               <b className="info-block-val" style={{ fontSize: 13, marginTop: 4 }}>
@@ -560,7 +561,7 @@ export function AssistantMessage({
               onClick={handleExplainClick}
               title="Explain this answer in simpler, more accessible terms"
             >
-              <Ic n="help-circle" />
+              <Ic n="help" />
               <span>Explain</span>
             </button>
 
