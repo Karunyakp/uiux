@@ -46,6 +46,7 @@ export default function Sidebar({
   onDeleteConversation,
   onOpenSettings,
   onOpenProfile,
+  onSignOut,
   onNavigateLanding,
   mobileNavOpen = false,
   onCloseMobileNav
@@ -309,6 +310,20 @@ export default function Sidebar({
         >
           <Ic n="a11y" />
         </button>
+
+        {/* Sign Out Button in Sidebar Footer */}
+        {user && !isGuest && (
+          <button
+            type="button"
+            className="side-settings-btn"
+            onClick={() => handleAction(onSignOut)}
+            title="Sign out of TrustLens"
+            aria-label="Sign out"
+            style={{ color: 'var(--color-orange, #f2905f)' }}
+          >
+            <Ic n="logout" />
+          </button>
+        )}
       </div>
     </aside>
   )

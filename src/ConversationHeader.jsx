@@ -18,6 +18,7 @@ export default function ConversationHeader({
   onCopyTranscript,
   user,
   onNavigateAuth,
+  onSignOut,
   a11yOpen,
   onToggleA11y,
   onToggleMobileNav
@@ -240,8 +241,8 @@ export default function ConversationHeader({
           )}
         </div>
 
-        {/* Auth sign in pill if guest */}
-        {(!user || user.isGuest) && (
+        {/* Auth sign in pill if guest, or sign out button if authenticated */}
+        {!user || user.isGuest ? (
           <button
             type="button"
             className="conv-signin-btn"
@@ -249,6 +250,21 @@ export default function ConversationHeader({
             title="Sign in to save your history across devices"
           >
             Sign In
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="conv-signin-btn"
+            onClick={onSignOut}
+            title="Sign out of account"
+            style={{
+              background: 'rgba(242, 144, 95, 0.15)',
+              borderColor: 'rgba(242, 144, 95, 0.35)',
+              color: 'var(--color-orange, #f2905f)'
+            }}
+          >
+            <Ic n="logout" style={{ width: 14, height: 14, marginRight: 4 }} />
+            Sign Out
           </button>
         )}
       </div>

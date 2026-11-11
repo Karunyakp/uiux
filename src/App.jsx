@@ -1290,6 +1290,7 @@ export default function App() {
           onDeleteConversation={handleDeleteConversation}
           onOpenSettings={() => setSettingsModalOpen(true)}
           onOpenProfile={() => setProfileModalOpen(true)}
+          onSignOut={handleSignOut}
           onNavigateLanding={() => navigate('landing')}
           mobileNavOpen={mobileNavOpen}
           onCloseMobileNav={() => setMobileNavOpen(false)}
@@ -1312,6 +1313,7 @@ export default function App() {
             onCopyTranscript={handleCopyTranscript}
             user={user}
             onNavigateAuth={navigate}
+            onSignOut={handleSignOut}
             a11yOpen={a11yOpen}
             onToggleA11y={() => setA11yOpen(!a11yOpen)}
             onToggleMobileNav={() => setMobileNavOpen(prev => !prev)}
