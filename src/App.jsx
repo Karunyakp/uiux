@@ -65,7 +65,7 @@ const getStoredA11y = () => {
     if (raw) {
       const parsed = JSON.parse(raw)
       const pref = parsed.themePreference || parsed.theme
-      const validTheme = ['light', 'dark', 'system'].includes(pref) ? pref : 'system'
+      const validTheme = ['light', 'dark', 'system'].includes(pref) ? pref : 'light'
       return {
         theme: validTheme,
         themePreference: validTheme,
@@ -78,8 +78,8 @@ const getStoredA11y = () => {
     }
   } catch {}
   return {
-    theme: 'system',
-    themePreference: 'system',
+    theme: 'light',
+    themePreference: 'light',
     colorBlind: false,
     largeText: false,
     dyslexicFont: false,
@@ -157,11 +157,11 @@ export default function App() {
   }
 
   const storedA11y = useRef(getStoredA11y()).current
-  const [themePreference, setThemePreference] = useState(storedA11y.themePreference || storedA11y.theme || 'system')
+  const [themePreference, setThemePreference] = useState(storedA11y.themePreference || storedA11y.theme || 'light')
   const theme = themePreference
   const setTheme = setThemePreference
   const [resolvedTheme, setResolvedTheme] = useState(() => {
-    return storedA11y.themePreference || storedA11y.theme || 'system'
+    return storedA11y.themePreference || storedA11y.theme || 'light'
   })
   const [colorBlind, setColorBlind] = useState(!!storedA11y.colorBlind)
   const [largeText, setLargeText] = useState(!!storedA11y.largeText)
